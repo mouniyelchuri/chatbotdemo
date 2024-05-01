@@ -76,7 +76,7 @@ with chat_placeholder:
     {'' if chat.origin == 'ai' else 'row-reverse'}">
     <img class="chat-icon" src="app/static/{
         'ai_icon.png' if chat.origin == 'ai' 
-                      else 'user-icon.png'}"
+                      else 'user_icon.png'}"
          width=32 height=32>
     <div class="chat-bubble
     {'ai-bubble' if chat.origin == 'ai' else 'human-bubble'}">
