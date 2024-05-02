@@ -62,7 +62,7 @@ for chat in st.session_state.messages:
         """
     st.markdown(div, unsafe_allow_html=True)
 
-if prompt := st.chat_input("What is up?"):
+if prompt := st.chat_input("Enter your question here"):
     logger.log(f"Starting chat session...")
     st.session_state.messages.append({"role": "user", "content": prompt})
     
@@ -91,10 +91,3 @@ if prompt := st.chat_input("What is up?"):
         st.markdown(ai_div, unsafe_allow_html=True)
             
         st.session_state.messages.append({"role": "ai", "content": response})
-m = st.markdown("""
-    <style> 
-    .stChatInput > div {
-    border: 2px solid #fff;
-    }
-    </style>
-    """, unsafe_allow_html=True)
