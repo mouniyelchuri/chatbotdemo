@@ -1,7 +1,4 @@
-from dataclasses import dataclass
-from typing import Literal
 import streamlit as st
-
 import vertexai
 from vertexai.preview.language_models import ChatModel
 import google.cloud.logging
@@ -10,6 +7,7 @@ import google.cloud.logging
 
 PROJECT_ID = "hca-tenet-chatbot-poc" # Your Google Cloud Project ID
 LOCATION =  "us-central1" # Your Google Cloud Project Region
+vertexai.init(project=PROJECT_ID, location=LOCATION)
 
 client = google.cloud.logging.Client(project=PROJECT_ID)
 client.setup_logging()
@@ -17,28 +15,18 @@ client.setup_logging()
 LOG_NAME="hca-chatbot-app-logs"
 logger= client.logger(LOG_NAME)
 
-@dataclass
-class Message:
-    """Class for keeping track of a chat message."""
-    origin: Literal["human", "ai"]
-    message: str
+@st.cache_resource
+def load_models():
+    chat_model = ChatModel.from_pretrained("chat-bison@002")
+    chat = chat_model.start_chat()
+    return chat
+
 
 def load_css():
     with open("static/styles.css", "r") as f:
         css = f"<style>{f.read()}</style>"
         st.markdown(css, unsafe_allow_html=True)
-
-def initialize_session_state():
-    if "history" not in st.session_state:
-        st.session_state.history = []
-    if "conversation" not in st.session_state:
-        
-        vertexai.init(project=PROJECT_ID, location=LOCATION)
-
-        chat_model = ChatModel.from_pretrained("chat-bison@002")
-        st.session_state.conversation = chat_model.start_chat()
-        
-
+    
 
 def response(model, message):
     parameters = {
@@ -50,41 +38,63 @@ def response(model, message):
     result = model.send_message(message, **parameters)
     return result.text
 
-        
 
 load_css()
-initialize_session_state()
+st.title("HCA Chatbot")
 
-st.title("HCA Demo Chatbot")
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-chat_placeholder = st.container()
+for chat in st.session_state.messages:
 
-if prompt := st.chat_input("What is up?"):
-    llm_response = response(st.session_state.conversation,prompt)
-    logger.log(f"Starting chat session...")
-    st.session_state.history.append(
-        Message("human", prompt)
-    )
-    st.session_state.history.append(
-        Message("ai", llm_response)
-    )
-
-with chat_placeholder:
-    for chat in st.session_state.history:
-        div = f"""
+    div = f"""
 <div class="chat-row 
-    {'' if chat.origin == 'ai' else 'row-reverse'}">
+    {'' if chat["role"] == 'ai' else 'row-reverse'}">
     <img class="chat-icon" src="app/static/{
-        'ai_icon.png' if chat.origin == 'ai' 
+        'ai_icon.png' if chat["role"] == 'ai' 
                       else 'user_icon.png'}"
          width=32 height=32>
     <div class="chat-bubble
-    {'ai-bubble' if chat.origin == 'ai' else 'human-bubble'}">
-        &#8203;{chat.message}
+    {'ai-bubble' if chat["role"] == 'ai' else 'human-bubble'}">
+        &#8203;{chat["content"]}
     </div>
 </div>
         """
-        st.markdown(div, unsafe_allow_html=True)
+    st.markdown(div, unsafe_allow_html=True)
+
+if prompt := st.chat_input("What is up?"):
+    logger.log(f"Starting chat session...")
+    st.session_state.messages.append({"role": "user", "content": prompt})
     
-    for _ in range(3):
-        st.markdown("")
+        #st.markdown(prompt)
+    user_div= f"""
+        <div class="chat-row row-reverse">
+    <img class="chat-icon" src="app/static/user_icon.png" width=32 height=32 >
+    <div class="chat-bubble human-bubble">&#8203;{prompt}
+    </div> 
+    </div>  
+        """
+    st.markdown(user_div, unsafe_allow_html=True)
+    
+    model=load_models()
+    logger.log(f"Invoking model with {prompt}")
+    response = response(model,prompt)
+    
+    if response:
+        ai_div= f"""
+        <div class="chat-row">
+    <img class="chat-icon" src="app/static/ai_icon.png" width=32 height=32 >
+    <div class="chat-bubble ai-bubble">&#8203;{response}
+    </div> 
+    </div>  
+        """
+        st.markdown(ai_div, unsafe_allow_html=True)
+            
+        st.session_state.messages.append({"role": "ai", "content": response})
+m = st.markdown("""
+    <style> 
+    .stChatInput > div {
+    border: 2px solid #fff;
+    }
+    </style>
+    """, unsafe_allow_html=True)
