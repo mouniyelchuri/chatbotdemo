@@ -17,7 +17,7 @@ logger= client.logger(LOG_NAME)
 
 @st.cache_resource
 def load_models():
-    chat_model = ChatModel.from_pretrained("chat-bison@002")
+    chat_model = ChatModel.from_pretrained("gemini-2.0-flash-exp")
     chat = chat_model.start_chat()
     return chat
 
