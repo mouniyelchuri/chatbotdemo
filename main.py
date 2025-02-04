@@ -79,7 +79,7 @@ if prompt := st.chat_input("Enter your question here"):
         <div class="chat-row row-reverse">
     <img class="chat-icon" src="app/static/user_icon.png" width=32 height=32 >
     <div class="chat-bubble human-bubble">&#8203;{prompt}
-    </div> 
+        </div> 
     </div>  
         """
     st.markdown(user_div, unsafe_allow_html=True)
@@ -87,15 +87,15 @@ if prompt := st.chat_input("Enter your question here"):
     model=load_models()
     logger.log(f"Invoking model with {prompt}")
     response = response(model,prompt)
-    
+    response = response.replace('\n','<br>')
     if response:
         ai_div= f"""
             <div class="chat-row">
         <img class="chat-icon" src="app/static/ai_icon.png" width=32 height=32 >
         <div class="chat-bubble ai-bubble">&#8203;{response}
-        </div> 
+            </div> 
         </div>  
-        """
+            """
         st.markdown(ai_div, unsafe_allow_html=True)
             
         st.session_state.messages.append({"role": "ai", "content": response})
