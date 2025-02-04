@@ -3,7 +3,12 @@ import vertexai
 from vertexai.preview.language_models import ChatModel
 import google.cloud.logging
 
-
+from google import genai
+from google.genai import types
+client = genai.Client(
+  vertexai=True, project="YOUR_PROJECT_ID", location="YOUR_LOCATION",
+)
+chat = client.chats.create(model="gemini-1.0-pro-002")
 
 PROJECT_ID = "hca-tenet-chatbot-poc" # Your Google Cloud Project ID
 LOCATION =  "us-central1" # Your Google Cloud Project Region
@@ -17,8 +22,10 @@ logger= client.logger(LOG_NAME)
 
 @st.cache_resource
 def load_models():
-    chat_model = ChatModel.from_pretrained("chat-bison@002")
-    chat = chat_model.start_chat()
+    client = genai.Client(
+    vertexai=True, project="hca-tenet-chatbot-poc", location="us-central1",
+    )
+    chat = client.chats.create(model="gemini-1.0-pro-002")
     return chat
 
 
@@ -35,7 +42,8 @@ def response(model, message):
         "top_p": 0.8,
         "top_k": 40
     }
-    result = model.send_message(message, **parameters)
+    #result = model.send_message(message, **parameters)
+    result = model.send_message(message)
     return result.text
 
 
@@ -82,11 +90,11 @@ if prompt := st.chat_input("Enter your question here"):
     
     if response:
         ai_div= f"""
-        <div class="chat-row">
-    <img class="chat-icon" src="app/static/ai_icon.png" width=32 height=32 >
-    <div class="chat-bubble ai-bubble">&#8203;{response}
-    </div> 
-    </div>  
+            <div class="chat-row">
+        <img class="chat-icon" src="app/static/ai_icon.png" width=32 height=32 >
+        <div class="chat-bubble ai-bubble">&#8203;{response}
+        </div> 
+        </div>  
         """
         st.markdown(ai_div, unsafe_allow_html=True)
             
