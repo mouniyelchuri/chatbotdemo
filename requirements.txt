@@ -5,3 +5,4 @@
 google-cloud-aiplatform
 streamlit
 google.cloud.logging
+google-genai
